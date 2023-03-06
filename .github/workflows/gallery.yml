@@ -18,7 +18,8 @@ jobs:
         run: |          
           pip install .[full]
           cd docs/examples/
-          for i in *.qmd ; do quarto render $i || true; done
+          #for i in *.qmd ; do quarto render $i || true; done
+          quarto render example_inflation_yoy.qmd
           pwd
           ls
         shell: bash
