@@ -8,14 +8,11 @@ Created on Wed Feb  1 13:52:54 2023
 import pandas as pd
 from functools import lru_cache
 import os
-import logging
 
 from pynsee.utils._request_insee import _request_insee
 from pynsee.utils._create_insee_folder import _create_insee_folder
 from pynsee.utils._hash import _hash
 
-
-logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=None)
 def get_descending_area(
@@ -95,10 +92,10 @@ def get_descending_area(
             data_final = pd.concat(list_data).reset_index(drop=True)
 
             data_final.to_pickle(file_data)
-            logger.debug(f"Data saved: {file_data}")
+            print(f"Data saved: {file_data}")
 
         except Exception:
-            logger.error("No data found !")
+            print("!!! No data found !!!")
             data_final = None
     else:
         try:
@@ -109,7 +106,7 @@ def get_descending_area(
                 area=area, code=code, date=date, type=type, update=True
             )
         else:
-            logger.info(
+            print(
                 "Locally saved data has been used\nSet update=True to trigger an update"
             )
 
