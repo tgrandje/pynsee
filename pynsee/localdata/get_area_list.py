@@ -30,18 +30,18 @@ def get_area_list(area=None, update=False):
         >>> com = get_area_list(area='communes')
     """
 
-    list_available_area = [       
-        'departements',
-        'regions',
-        'communes',
-        'communesAssociees',
-        'communesDeleguees',
-        'arrondissementsMunicipaux',        
-        'arrondissements',
+    list_available_area = [
+        "departements",
+        "regions",
+        "communes",
+        "communesAssociees",
+        "communesDeleguees",
+        "arrondissementsMunicipaux",
+        "arrondissements",
         "zonesDEmploi2020",
         "airesDAttractionDesVilles2020",
         "unitesUrbaines2020",
-        "collectivitesDOutreMer"
+        "collectivitesDOutreMer",
     ]
     area_string = _paste(list_available_area, collapse=" ")
 
@@ -53,13 +53,11 @@ def get_area_list(area=None, update=False):
     ]
     list_UU20 = ["UU2020", "unitesUrbaines2020", "UniteUrbaine2020"]
 
-    list_ZE20 = [s.lower() for s in list_ZE20]
-    list_AAV20 = [s.lower() for s in list_AAV20]
-    list_UU20 = [s.lower() for s in list_UU20]
+    list_ZE20 = list_ZE20 + [s.lower() for s in list_ZE20]
+    list_AAV20 = list_AAV20 + [s.lower() for s in list_AAV20]
+    list_UU20 = list_UU20 + [s.lower() for s in list_UU20]
 
     if area is not None:
-        area = area.lower()
-
         if area in list_ZE20:
             area = "zonesDEmploi2020"
         if area in list_AAV20:
@@ -67,7 +65,9 @@ def get_area_list(area=None, update=False):
         if area in list_UU20:
             area = "unitesUrbaines2020"
 
-        if area not in list_available_area:
+        if area not in list_available_area + [
+            x.lower() for x in list_available_area
+        ]:
             msg = "!!! {} is not available\nPlease choose area among:\n{}".format(
                 area, area_string
             )
