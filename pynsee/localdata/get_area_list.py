@@ -11,13 +11,19 @@ from pynsee.utils._hash import _hash
 
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-def get_area_list(area=None, update=False):
+
+def get_area_list(area=None, date=None, update=False):
     """Get an exhaustive list of administrative areas : communes, departments, and urban, employment or functional areas
 
     Args:
         area (str, optional): Defaults to None, then get all values
+
+        date (str): date of validity (AAAA-MM-DD)
+
+        update (bool): locally saved data is used by default. Trigger an update with update=True.
 
     Raises:
         ValueError: Error if area is not available
@@ -75,18 +81,29 @@ def get_area_list(area=None, update=False):
         else:
             list_available_area = [area]
 
-    filename = _hash("".join(['get_area_list'] + list_available_area))
-    insee_folder = _create_insee_folder()
-    file_data = insee_folder + "/" + filename   
-    
-    if (not os.path.exists(file_data)) or update:
+    date_hash = ""
+    if date is not None:
+        date_hash = date
 
+    filename = _hash(
+        "".join(["get_area_list"] + list_available_area + [date_hash])
+    )
+    insee_folder = _create_insee_folder()
+    file_data = insee_folder + "/" + filename
+
+    if (not os.path.exists(file_data)) or update:
         list_data = []
 
         for a in list_available_area:
-            api_url = "https://api.insee.fr/metadonnees/V1/geo/" + a + "?date=*"
+            api_url = "https://api.insee.fr/metadonnees/V1/geo/" + a
+            if date:
+                api_url += f"?date={date}"
+            # else:
+            #     api_url += "?date=*"
 
-            request = _request_insee(api_url=api_url, file_format="application/json")
+            request = _request_insee(
+                api_url=api_url, file_format="application/json"
+            )
 
             data = request.json()
 
@@ -95,7 +112,7 @@ def get_area_list(area=None, update=False):
                 list_data.append(df)
 
         data_all = pd.concat(list_data).reset_index(drop=True)
-        
+
         data_all.rename(
             columns={
                 "code": "CODE",
@@ -114,7 +131,7 @@ def get_area_list(area=None, update=False):
     else:
         try:
             data_all = pd.read_pickle(file_data)
-        except:
+        except Exception:
             os.remove(file_data)
             data_all = get_area_list(area=area, update=True)
         else:
