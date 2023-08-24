@@ -8,6 +8,7 @@ import requests
 import os
 import sys
 
+import pynsee
 from pynsee.utils._get_token import _get_token
 from pynsee.utils._get_envir_token import _get_envir_token
 from pynsee.utils._get_credentials import _get_credentials
@@ -23,7 +24,8 @@ class TestFunction(TestCase):
     version_3_7 = (sys.version_info[0] == 3) & (sys.version_info[1] == 7)
 
     if not version_3_7:
-        StartKeys = _get_credentials()
+        _get_credentials()
+        StartKeys = pynsee._config
 
         def test_get_token(self, StartKeys=StartKeys):
             insee_key = StartKeys["insee_key"]
