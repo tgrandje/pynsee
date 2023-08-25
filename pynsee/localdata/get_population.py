@@ -6,7 +6,7 @@ from pynsee.geodata.get_geodata import get_geodata
 
 
 @lru_cache(maxsize=None)
-def get_population():
+def get_population(update=False):
     """Get population data on all French communes (cities)
 
     Examples:
@@ -14,6 +14,6 @@ def get_population():
         >>> pop = get_population()
     """
 
-    df = get_geodata("ADMINEXPRESS-COG-CARTO.LATEST:commune")
+    df = get_geodata("ADMINEXPRESS-COG-CARTO.LATEST:commune", update=update)
 
     return df

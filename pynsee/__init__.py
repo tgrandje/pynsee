@@ -6,6 +6,9 @@ from pynsee.metadata import *
 from pynsee.utils import *
 from pynsee.download import *
 
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # configuration
 _config = {
