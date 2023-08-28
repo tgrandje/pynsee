@@ -39,24 +39,25 @@ def mock_pool(*args, **kwargs):
 
 
 class MockedSession(CachedSession):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, cache_name, *args, **kwargs):
         super().__init__(
-            cache_name="pynsee-testing-cache",
+            cache_name=f"pynsee.{cache_name}.sqlite",
             expire_after=3600 * 24 * 15,
             ignored_parameters=("Authorization", "access_token"),
             filter_fn=lambda session: "api.insee.fr/token" not in session.url,
+            allowable_codes=(200, 404),
             *args,
             **kwargs,
         )
 
     def get(self, *args, **kwargs):
         r = super().get(*args, **kwargs)
-        print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
+        # print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
         return r
 
     def post(self, *args, **kwargs):
         r = super().post(*args, **kwargs)
-        print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
+        # print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
         return r
 
 
@@ -64,11 +65,5 @@ def mock_requests_session(*args, **kwargs):
     return MockedSession(*args, **kwargs)
 
 
-def mock_requests_get(*args, **kwargs):
-    s = MockedSession()
-    return s.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    s = MockedSession()
-    return s.post(*args, **kwargs)
+def mock_wait_api_query_limit(query):
+    return

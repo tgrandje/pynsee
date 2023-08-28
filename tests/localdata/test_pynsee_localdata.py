@@ -6,8 +6,8 @@ import unittest
 from unittest import TestCase
 from unittest import mock
 import pandas as pd
-import sys
 from requests.exceptions import RequestException
+from functools import partial
 
 from pynsee.localdata._get_geo_relation import _get_geo_relation
 from pynsee.localdata._get_insee_one_area import _get_insee_one_area
@@ -27,21 +27,32 @@ from pynsee.localdata.get_descending_area import get_descending_area
 
 from tests.mockups import (
     mock_requests_session,
-    mock_requests_get,
-    mock_requests_post,
     mock_pool,
+    # mock_wait_api_query_limit,
 )
 
 
+mock_request_session_local = partial(
+    mock_requests_session, cache_name=__name__
+)
+
+SESSION = mock_request_session_local()
+
+
+def mock_requests_get(*args, **kwargs):
+    return SESSION.get(*args, **kwargs)
+
+
+def mock_requests_post(*args, **kwargs):
+    return SESSION.post(*args, **kwargs)
+
+
+# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-@mock.patch("requests.Session", side_effect=mock_requests_session)
+@mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
-class TestFunction(TestCase):
-    # version_3_7 = (sys.version_info[0] == 3) & (sys.version_info[1] == 7)
-
-    # if version_3_7:
-
+class TestLocaldata(TestCase):
     def test_get_population(self, patch1, patch2, patch3, patch4):
         df = get_population(update=True)
         test = isinstance(df, pd.DataFrame)
