@@ -23,3 +23,5 @@ docs/examples/.jupyter_cache/*
 .spyproject/
 poetry.lock
 .env
+.sqlite
+.sqlite-journal
