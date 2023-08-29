@@ -49,7 +49,39 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
 @module_patch(
+    "pynsee.localdata.get_area_list._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata.get_ascending_area._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata.get_descending_area._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata.get_new_city._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
     "pynsee.localdata.get_old_city._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata._get_geo_list_simple._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata._get_geo_relation._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata._get_insee_local_onegeo._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.localdata._get_insee_one_area._request_insee",
     side_effect=mock_request_insee,
 )
 class TestLocaldata(TestCase):

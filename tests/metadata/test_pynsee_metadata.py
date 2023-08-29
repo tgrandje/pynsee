@@ -35,7 +35,19 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
 @module_patch(
-    "pynsee.utils._request_insee._request_insee",
+    "pynsee.metadata.get_definition._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.metadata.get_definition_list._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.metadata.get_legal_entity._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.metadata.get_operation._request_insee",
     side_effect=mock_request_insee,
 )
 class TestMetadata(TestCase):

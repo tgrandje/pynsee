@@ -13,10 +13,10 @@ from pynsee.download import get_column_metadata
 from pynsee.utils.clear_all_cache import clear_all_cache
 
 from tests.mockups import (
-    module_patch,
+    # module_patch,
     mock_requests_session,
     mock_pool,
-    mock_request_insee,
+    # mock_request_insee,
     mock_requests_get_from_session,
     mock_requests_post_from_session,
 )
@@ -34,10 +34,6 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
-@module_patch(
-    "pynsee.utils._request_insee._request_insee",
-    side_effect=mock_request_insee,
-)
 class TestsDownload(TestCase):
     def test_check_url(self, *args):
         url = "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2020_csv.zip"

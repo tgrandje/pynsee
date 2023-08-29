@@ -66,7 +66,23 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
 @module_patch(
-    "pynsee.utils._request_insee._request_insee",
+    "pynsee.macrodata.get_dataset_list._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.macrodata.get_last_release._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.macrodata._get_dataset_dimension._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.macrodata._get_dimension_values._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.macrodata._get_insee._request_insee",
     side_effect=mock_request_insee,
 )
 class TestMacrodata(TestCase):

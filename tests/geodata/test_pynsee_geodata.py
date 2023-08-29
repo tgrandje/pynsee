@@ -31,38 +31,55 @@ from pynsee.geodata._get_geodata_with_backup import _get_geodata_with_backup
 # coverage report --omit=*/utils/*,*/macrodata/*,*/localdata/*,*/download/*,*/sirene/*,*/metadata/* -m
 
 from tests.mockups import (
-    module_patch,
+    # module_patch,
     mock_requests_session,
     mock_pool,
-    mock_request_insee,
+    # mock_request_insee,
     mock_requests_get_from_session,
     mock_requests_post_from_session,
 )
 
 
-mock_request_session_local = partial(
-    mock_requests_session, cache_name=__name__
+# Split on multiple cach to avoid reaching artifacts storage's ceiling
+mock_request_session_local_1 = partial(
+    mock_requests_session, cache_name=f"{__name__}_1"
+)
+mock_request_session_local_2 = partial(
+    mock_requests_session, cache_name=f"{__name__}_2"
 )
 
-SESSION = mock_request_session_local()
-mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
-mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
+SESSION_1 = mock_request_session_local_1()
+SESSION_2 = mock_request_session_local_2()
 
-
-@mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-@mock.patch("requests.Session", side_effect=mock_request_session_local)
-@mock.patch("requests.get", side_effect=mock_requests_get)
-@mock.patch("requests.post", side_effect=mock_requests_post)
-@module_patch(
-    "pynsee.utils._request_insee._request_insee",
-    side_effect=mock_request_insee,
+mock_requests_get_1 = partial(
+    mock_requests_get_from_session, session=SESSION_1
 )
+mock_requests_post_1 = partial(
+    mock_requests_post_from_session, session=SESSION_1
+)
+
+mock_requests_get_2 = partial(
+    mock_requests_get_from_session, session=SESSION_2
+)
+mock_requests_post_2 = partial(
+    mock_requests_post_from_session, session=SESSION_2
+)
+
+
 class TestGeodata(TestCase):
+    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
+    @mock.patch("requests.Session", side_effect=mock_request_session_local_1)
+    @mock.patch("requests.get", side_effect=mock_requests_get_1)
+    @mock.patch("requests.post", side_effect=mock_requests_post_1)
     def test_get_geodata_with_backup(self, *args):
         df = _get_geodata_with_backup("ADMINEXPRESS-COG.LATEST:departement")
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_get_geodata_short(self, *args):
+    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
+    @mock.patch("requests.Session", side_effect=mock_request_session_local_1)
+    @mock.patch("requests.get", side_effect=mock_requests_get_1)
+    @mock.patch("requests.post", side_effect=mock_requests_post_1)
+    def test_get_geodata_short_1(self, *args):
         global session
         session = requests.Session()
         list_bbox = (-2, 43.0, 6.0, 44.5)
@@ -95,12 +112,12 @@ class TestGeodata(TestCase):
         geo_chflieut = chflieu.translate().zoom().get_geom()
         self.assertTrue(isinstance(geo_chflieut, MultiPoint))
 
-        com = get_geodata(
-            id="ADMINEXPRESS-COG-CARTO.LATEST:commune", update=True
-        )
-        self.assertTrue(isinstance(com, GeoFrDataFrame))
-        geo = com.get_geom()
-        self.assertTrue(isinstance(geo, MultiPolygon))
+        # com = get_geodata(
+        #     id="ADMINEXPRESS-COG-CARTO.LATEST:commune", update=True
+        # )
+        # self.assertTrue(isinstance(com, GeoFrDataFrame))
+        # geo = com.get_geom()
+        # self.assertTrue(isinstance(geo, MultiPolygon))
 
         # query with polygon and crs 4326
         dep29 = get_geodata(
@@ -140,10 +157,10 @@ class TestGeodata(TestCase):
         )
         self.assertTrue(isinstance(com29, pd.DataFrame))
 
-        ovdep = com.translate().zoom()
-        self.assertTrue(isinstance(ovdep, GeoFrDataFrame))
-        geo_ovdep = ovdep.get_geom()
-        self.assertTrue(isinstance(geo_ovdep, MultiPolygon))
+        # ovdep = com.translate().zoom()
+        # self.assertTrue(isinstance(ovdep, GeoFrDataFrame))
+        # geo_ovdep = ovdep.get_geom()
+        # self.assertTrue(isinstance(geo_ovdep, MultiPolygon))
 
         # test _add_insee_dep_from_geodata
         epci = get_geodata(
@@ -191,6 +208,24 @@ class TestGeodata(TestCase):
 
         data = get_geodata(id="test", update=True)
         self.assertTrue(isinstance(data, pd.DataFrame))
+
+    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
+    @mock.patch("requests.Session", side_effect=mock_request_session_local_2)
+    @mock.patch("requests.get", side_effect=mock_requests_get_2)
+    @mock.patch("requests.post", side_effect=mock_requests_post_2)
+    def test_get_geodata_short_2(self, *args):
+        # Split on 2 tests to split the cache database and reduce size
+        com = get_geodata(
+            id="ADMINEXPRESS-COG-CARTO.LATEST:commune", update=True
+        )
+        self.assertTrue(isinstance(com, GeoFrDataFrame))
+        geo = com.get_geom()
+        self.assertTrue(isinstance(geo, MultiPolygon))
+
+        ovdep = com.translate().zoom()
+        self.assertTrue(isinstance(ovdep, GeoFrDataFrame))
+        geo_ovdep = ovdep.get_geom()
+        self.assertTrue(isinstance(geo_ovdep, MultiPolygon))
 
 
 if __name__ == "__main__":

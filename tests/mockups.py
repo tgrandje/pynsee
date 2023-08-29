@@ -64,12 +64,18 @@ class MockedSession(CachedSession):
 
     def get(self, *args, **kwargs):
         r = super().get(*args, **kwargs)
-        print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
+        if not r.from_cache:
+            print(
+                f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}"
+            )
         return r
 
     def post(self, *args, **kwargs):
         r = super().post(*args, **kwargs)
-        print(f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}")
+        if not r.from_cache:
+            print(
+                f"{args[0]}, code={r.status_code}, from_cache={r.from_cache}"
+            )
         return r
 
 
@@ -104,8 +110,8 @@ proxies = {
 def mock_request_insee(
     api_url=None, sdmx_url=None, file_format="application/xml", *args, **kwargs
 ):
-    print("mocked !")
-    print("=" * 50)
+    # print("mocked !")
+    # print("=" * 50)
     with warnings.catch_warnings():
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

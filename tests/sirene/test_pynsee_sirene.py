@@ -46,7 +46,15 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
 @module_patch(
-    "pynsee.utils._request_insee._request_insee",
+    "pynsee.sirene.get_sirene_data._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.sirene.get_sirene_relatives._request_insee",
+    side_effect=mock_request_insee,
+)
+@module_patch(
+    "pynsee.sirene._request_sirene._request_insee",
     side_effect=mock_request_insee,
 )
 class TestSirene(TestCase):
