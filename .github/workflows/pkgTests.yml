@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.11"]
 
     steps:
     - uses: actions/checkout@v2
@@ -25,7 +25,7 @@ jobs:
       run: |
         #sudo apt-get install libgeos-dev
         python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov geopandas nbconvert matplotlib descartes 
+        pip install flake8 pytest pytest-cov geopandas nbconvert matplotlib descartes requests-cache
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-extra.txt ]; then pip install -r requirements-extra.txt; fi
     - name: Lint with flake8
@@ -49,12 +49,72 @@ jobs:
         # run all py files
         # for f in *.py; do python "$f"; done
         cd ../..
+    
+    - name: "Restore caching artifacts for macrodata, metadata, sirene & utils"
+      uses: actions/download-artifact@v3
+      with:
+        name: "cache-macrodata-metadata-sirene-utils"
+        
+    - name: "Restore caching artifacts for localdata"
+      uses: actions/download-artifact@v3
+      with:
+        name: "cache-localdata"
+        
+    - name: "Restore caching artifacts for geodata 1/2"
+      uses: actions/download-artifact@v3
+      with:
+        name: "cache-geodata1"
+    - name: "Restore caching artifacts for geodata 2/2"
+      uses: actions/download-artifact@v3
+      with:
+        name: "cache-geodata2"
+        
+    - name: "Restore caching artifacts for download"
+      uses: actions/download-artifact@v3
+      with:
+        name: "cache-download"
+    
     - name: Test with pytest
       env:      
         insee_key: ${{ secrets.INSEE_KEY }}
         insee_secret: ${{ secrets.INSEE_SECRET }}
       run: |
-        pytest -v --cov
+        pytest -v --cov      
+    
+    
+    - name: "Upload caching artifacts for macrodata, metadata, sirene & utils"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "cache-macrodata-metadata-sirene-utils"
+        path: |
+          "pynsee.tests.macrodata.test_pynsee_macrodata.sqlite"
+          "pynsee.tests.metadata.test_pynsee_metadata.sqlite"
+          "pynsee.tests.sirene.test_pynsee_sirene.sqlite"
+          "pynsee.tests.utils.test_pynsee_utils.sqlite"
+          
+    - name: "Upload caching artifacts for localdata"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "cache-localdata"
+        path: "pynsee.tests.download.test_pynsee_localdata.sqlite"
+        
+    - name: "Upload caching artifacts for geodata 1/2"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "cache-geodata1"
+        path: "pynsee.tests.download.test_pynsee_geodata_1.sqlite"
+    - name: "Upload caching artifacts for geodata 2/2"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "cache-geodata2"
+        path: "pynsee.tests.download.test_pynsee_geodata_2.sqlite"
+    - name: "Upload caching artifacts for download"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "cache-download"
+        path: "pynsee.tests.download.test_pynsee_download.sqlite"
+        
+        
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1
       if: github.ref == 'refs/heads/master'
