@@ -22,10 +22,14 @@ from pynsee.sirene.SireneDataFrame import SireneDataFrame
 from pynsee.geodata.GeoFrDataFrame import GeoFrDataFrame
 from pynsee.sirene.get_sirene_relatives import get_sirene_relatives
 
+
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 mock_request_session_local = partial(
@@ -33,23 +37,20 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.utils._request_insee._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestSirene(TestCase):
-    def test_get_sirene_relatives(self, patch1, patch2, patch3, patch4):
+    def test_get_sirene_relatives(self, *args):
         test = True
         df = get_sirene_relatives("00555008200027")
         test = test & isinstance(df, SireneDataFrame)
@@ -62,24 +63,24 @@ class TestSirene(TestCase):
 
         self.assertTrue(test)
 
-    def test_error_get_relatives1(self, patch1, patch2, patch3, patch4):
+    def test_error_get_relatives1(self, *args):
         with self.assertRaises(ValueError):
             get_sirene_relatives(1)
 
-    def test_error_get_relatives2(self, patch1, patch2, patch3, patch4):
+    def test_error_get_relatives2(self, *args):
         with self.assertRaises(ValueError):
             get_sirene_relatives("0")
 
-    def test_error_get_relatives3(self, patch1, patch2, patch3, patch4):
+    def test_error_get_relatives3(self, *args):
         with self.assertRaises(ValueError):
             get_sirene_relatives("0")
 
-    def test_get_sirene_relatives4(self, patch1, patch2, patch3, patch4):
+    def test_get_sirene_relatives4(self, *args):
         df = get_sirene_relatives(["39860733300059", "00555008200027"])
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_get_dimension_list(self, patch1, patch2, patch3, patch4):
+    def test_get_dimension_list(self, *args):
         test = True
 
         df = get_dimension_list()
@@ -90,11 +91,11 @@ class TestSirene(TestCase):
 
         self.assertTrue(test)
 
-    def test_error_get_dimension_list(self, patch1, patch2, patch3, patch4):
+    def test_error_get_dimension_list(self, *args):
         with self.assertRaises(ValueError):
             get_dimension_list("sirène")
 
-    def test_get_location(self, patch1, patch2, patch3, patch4):
+    def test_get_location(self, *args):
         df = search_sirene(
             variable=["activitePrincipaleEtablissement"],
             pattern=["29.10Z"],
@@ -130,17 +131,17 @@ class TestSirene(TestCase):
 
         self.assertTrue(test)
 
-    def test_get_sirene_data(self, patch1, patch2, patch3, patch4):
+    def test_get_sirene_data(self, *args):
         df1 = get_sirene_data(["32227167700021", "26930124800077"])
         df2 = get_sirene_data("552081317")
         test = isinstance(df1, pd.DataFrame) & isinstance(df2, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_error_get_sirene_data(self, patch1, patch2, patch3, patch4):
+    def test_error_get_sirene_data(self, *args):
         with self.assertRaises(ValueError):
             get_sirene_data("1")
 
-    def test_search_sirene_error(self, patch1, patch2, patch3, patch4):
+    def test_search_sirene_error(self, *args):
         def search_sirene_error():
             df = search_sirene(
                 kind="test",
@@ -151,7 +152,7 @@ class TestSirene(TestCase):
 
         self.assertRaises(ValueError, search_sirene_error)
 
-    def test_search_sirene(self, patch1, patch2, patch3, patch4):
+    def test_search_sirene(self, *args):
         test = True
 
         df = search_sirene(
@@ -250,7 +251,7 @@ class TestSirene(TestCase):
 
         self.assertTrue(test)
 
-    def test_request_sirene(self, patch1, patch2, patch3, patch4):
+    def test_request_sirene(self, *args):
         list_query_siren = [
             "?q=periode(denominationUniteLegale.phonetisation:sncf)&nombre=20",
             "?q=sigleUniteLegale:???",

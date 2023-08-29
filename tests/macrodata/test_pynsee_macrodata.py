@@ -40,9 +40,12 @@ from pynsee.macrodata.search_macrodata import search_macrodata
 from pynsee.utils._clean_insee_folder import _clean_insee_folder
 
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 
@@ -54,42 +57,39 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.utils._request_insee._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestMacrodata(TestCase):
-    def test_get_dataset_list_internal(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_list_internal(self, *args):
         df = _get_dataset_list_internal()
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_download_series_list(self, patch1, patch2, patch3, patch4):
+    def test_download_series_list(self, *args):
         # _clean_insee_folder()
         df = _download_idbank_list()
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_get_series_title(self, patch1, patch2, patch3, patch4):
+    def test_get_series_title(self, *args):
         series = search_macrodata()
         series = series.loc[:420, "IDBANK"].to_list()
         titles = get_series_title(series)
         self.assertTrue(isinstance(titles, pd.DataFrame))
 
-    def test_get_dataset_list(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_list(self, *args):
         data = get_dataset_list()
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_column_title_1(self, patch1, patch2, patch3, patch4):
+    def test_get_column_title_1(self, *args):
         _clean_insee_folder()
         data1 = get_column_title()
         test1 = isinstance(data1, pd.DataFrame)
@@ -98,10 +98,10 @@ class TestMacrodata(TestCase):
         test2 = isinstance(data2, pd.DataFrame)
         self.assertTrue(test1 & test2)
 
-    def test_get_column_title_2(self, patch1, patch2, patch3, patch4):
+    def test_get_column_title_2(self, *args):
         self.assertRaises(ValueError, get_column_title, dataset=["a"])
 
-    def test_get_series_list_1(self, patch1, patch2, patch3, patch4):
+    def test_get_series_list_1(self, *args):
         test = True
         data = get_series_list("CLIMAT-AFFAIRES")
         test = test & isinstance(data, pd.DataFrame)
@@ -114,23 +114,23 @@ class TestMacrodata(TestCase):
 
         self.assertTrue(test)
 
-    def test_get_series_list_2(self, patch1, patch2, patch3, patch4):
+    def test_get_series_list_2(self, *args):
         self.assertRaises(ValueError, get_series_list, "a")
 
-    def test_get_series_1(self, patch1, patch2, patch3, patch4):
+    def test_get_series_1(self, *args):
         idbank_list = get_series_list("IPC-2015").iloc[:900]
         data = get_series(idbank_list.IDBANK)
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_series_2(self, patch1, patch2, patch3, patch4):
+    def test_get_series_2(self, *args):
         data = get_series("001769682", "001769683")
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_series_3(self, patch1, patch2, patch3, patch4):
+    def test_get_series_3(self, *args):
         data = get_series(["001769683", "001769682"], lastNObservations=1)
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_date(self, patch1, patch2, patch3, patch4):
+    def test_get_date(self, *args):
         data = get_series(
             "001694056",
             "001691912",
@@ -143,7 +143,7 @@ class TestMacrodata(TestCase):
         test2 = _get_date(freq="TEST", time_period=3) == 3
         self.assertTrue(test1 & test2)
 
-    def test_get_dataset_metadata_1(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_metadata_1(self, *args):
         # test automatic update of metadata, when older than 3 months
         df = _get_dataset_metadata("CLIMAT-AFFAIRES")
         os.environ["insee_date_test"] = str(
@@ -170,14 +170,14 @@ class TestMacrodata(TestCase):
 
         self.assertTrue(test1 & test2 & test3)
 
-    def test_get_dataset_metadata_2(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_metadata_2(self, *args):
         # crash download_idbank_list and test the result on get_dataset_metadata
         _clean_insee_folder()
         df = _get_dataset_metadata("CLIMAT-AFFAIRES")
         test1 = isinstance(df, pd.DataFrame)
         self.assertTrue(test1)
 
-    def test_get_insee(self, patch1, patch2, patch3, patch4):
+    def test_get_insee(self, *args):
         data = _get_insee(
             api_query="https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001769682",
             sdmx_query="https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/001769682",
@@ -192,11 +192,11 @@ class TestMacrodata(TestCase):
 
         self.assertTrue(test1 & test2)
 
-    def test_get_dataset_1(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_1(self, *args):
         data = get_dataset("BALANCE-PAIEMENTS")
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_dataset_2(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_2(self, *args):
         data = get_dataset(
             "CNA-2014-CPEB",
             filter="A.CNA_CPEB.A38-CB.VAL.D39.VALEUR_ABSOLUE.FE.EUROS_COURANTS.BRUT",
@@ -204,7 +204,7 @@ class TestMacrodata(TestCase):
         )
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_dataset_3(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_3(self, *args):
         data1 = get_dataset("IPC-2015", filter="M......ENSEMBLE...CVS.2015.")
         data2 = get_dataset(
             "IPC-2015",
@@ -214,10 +214,10 @@ class TestMacrodata(TestCase):
         )
         self.assertTrue(len(data1.index) < len(data2.index))
 
-    def test_get_dataset_4(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_4(self, *args):
         self.assertRaises(ValueError, get_dataset, "a")
 
-    def test_search_macrodata(self, patch1, patch2, patch3, patch4):
+    def test_search_macrodata(self, *args):
         search_all = search_macrodata()
         search_paris = search_macrodata("PARIS")
         search_paper = search_macrodata("pâte à papier")
@@ -226,7 +226,7 @@ class TestMacrodata(TestCase):
         test3 = isinstance(search_paper, pd.DataFrame)
         self.assertTrue(test1 & test2 & test3)
 
-    def test_get_idbank_internal_data(self, patch1, patch2, patch3, patch4):
+    def test_get_idbank_internal_data(self, *args):
         df = _get_idbank_internal_data()
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
@@ -238,7 +238,7 @@ class TestMacrodata(TestCase):
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_get_dataset_dimension(self, patch1, patch2, patch3, patch4):
+    def test_get_dataset_dimension(self, *args):
         df = _get_dataset_dimension("CLIMAT-AFFAIRES")
         os.environ["insee_date_test"] = str(
             datetime.now() + timedelta(days=91)
@@ -253,7 +253,7 @@ class TestMacrodata(TestCase):
 
         self.assertTrue(test1 & test2)
 
-    def test_get_dimension_values(self, patch1, patch2, patch3, patch4):
+    def test_get_dimension_values(self, *args):
         df = _get_dimension_values("CL_PERIODICITE")
         os.environ["insee_date_test"] = str(
             datetime.now() + timedelta(days=91)
@@ -263,7 +263,7 @@ class TestMacrodata(TestCase):
         test1 = isinstance(df, pd.DataFrame)
         self.assertTrue(test1)
 
-    def test_download_idbank_list_1(self, patch1, patch2, patch3, patch4):
+    def test_download_idbank_list_1(self, *args):
         # try:
         df = _download_idbank_list()
         os.environ["insee_date_test"] = str(
@@ -278,11 +278,11 @@ class TestMacrodata(TestCase):
 
     if test_SDMX:
 
-        def test_get_last_release(self, patch1, patch2, patch3, patch4):
+        def test_get_last_release(self, *args):
             data = get_last_release()
             self.assertTrue(isinstance(data, pd.DataFrame))
 
-        # def test_build_series_list(self, patch1, patch2, patch3, patch4):
+        # def test_build_series_list(self, *args):
         #     df = _build_series_list()
         #     test = isinstance(df, pd.DataFrame)
         #     os.environ['pynsee_use_sdmx'] = "False"

@@ -20,7 +20,9 @@ from pynsee.utils.init_conn import init_conn
 from tests.mockups import (
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 
@@ -32,17 +34,10 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
@@ -63,7 +58,7 @@ class TestUtils(TestCase):
         token = _get_token(insee_key, insee_secret)
         self.assertTrue((token is not None))
 
-    def test_request_insee_1(self, patch1, patch2, patch3, patch4):
+    def test_request_insee_1(self, *args):
         # test both api and sdmx queries fail but token is not none
         sdmx_url = "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/test"
         api_url = "https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/test"
@@ -77,7 +72,7 @@ class TestUtils(TestCase):
 
     if test_SDMX:
 
-        def test_request_insee_2(self, patch1, patch2, patch3, patch4):
+        def test_request_insee_2(self, *args):
             # if credentials are not well provided but sdmx url works
             clear_all_cache()
 
@@ -95,7 +90,7 @@ class TestUtils(TestCase):
             test = results.status_code == 200
             self.assertTrue(test)
 
-    def test_request_insee_3(self, patch1, patch2, patch3, patch4):
+    def test_request_insee_3(self, *args):
         # token is none and sdmx query fails
         def init_conn_foo():
             init_conn(insee_key="test", insee_secret="test")
@@ -116,7 +111,7 @@ class TestUtils(TestCase):
 
         self.assertRaises(ValueError, request_insee_test)
 
-    def test_request_insee_4(self, patch1, patch2, patch3, patch4):
+    def test_request_insee_4(self, *args):
         # token is none and sdmx query is None
         # _get_token.cache_clear()
         # _get_envir_token.cache_clear()
@@ -132,7 +127,7 @@ class TestUtils(TestCase):
 
         self.assertRaises(ValueError, request_insee_test)
 
-    def test_request_insee_5(self, patch1, patch2, patch3, patch4):
+    def test_request_insee_5(self, *args):
         # api query is none and sdmx query fails
         sdmx_url = "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/test"
 
@@ -141,14 +136,14 @@ class TestUtils(TestCase):
 
         self.assertRaises(ValueError, request_insee_test)
 
-    def test_get_envir_token(self, patch1, patch2, patch3, patch4):
+    def test_get_envir_token(self, *args):
         _get_envir_token.cache_clear()
         os.environ["insee_token"] = "a"
         token = _get_envir_token()
         test = token is None
         self.assertTrue(test)
 
-    def test_clear_all_cache(self, patch1, patch2, patch3, patch4):
+    def test_clear_all_cache(self, *args):
         test = True
         try:
             clear_all_cache()

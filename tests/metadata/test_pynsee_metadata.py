@@ -12,9 +12,12 @@ from pynsee.metadata.get_activity_list import get_activity_list
 from pynsee.metadata.get_legal_entity import get_legal_entity
 
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 
@@ -23,37 +26,34 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.utils._request_insee._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestMetadata(TestCase):
-    def test_get_legal_entity(self, patch1, patch2, patch3, patch4):
+    def test_get_legal_entity(self, *args):
         data = get_legal_entity(codes=["5599", "83"])
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_definition_list(self, patch1, patch2, patch3, patch4):
+    def test_get_definition_list(self, *args):
         data = get_definition_list()
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_definition(self, patch1, patch2, patch3, patch4):
+    def test_get_definition(self, *args):
         data = get_definition(ids=["c1020", "c1601"])
         self.assertTrue(isinstance(data, pd.DataFrame))
         data = get_definition(ids="c1020")
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_activity_list(self, patch1, patch2, patch3, patch4):
+    def test_get_activity_list(self, *args):
         test = True
         level_available = [
             "A10",

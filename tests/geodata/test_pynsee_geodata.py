@@ -31,9 +31,12 @@ from pynsee.geodata._get_geodata_with_backup import _get_geodata_with_backup
 # coverage report --omit=*/utils/*,*/macrodata/*,*/localdata/*,*/download/*,*/sirene/*,*/metadata/* -m
 
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 
@@ -42,27 +45,24 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.utils._request_insee._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestGeodata(TestCase):
-    def test_get_geodata_with_backup(self, patch1, patch2, patch3, patch4):
+    def test_get_geodata_with_backup(self, *args):
         df = _get_geodata_with_backup("ADMINEXPRESS-COG.LATEST:departement")
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_get_geodata_short(self, patch1, patch2, patch3, patch4):
+    def test_get_geodata_short(self, *args):
         global session
         session = requests.Session()
         list_bbox = (-2, 43.0, 6.0, 44.5)

@@ -26,9 +26,12 @@ from pynsee.localdata.get_ascending_area import get_ascending_area
 from pynsee.localdata.get_descending_area import get_descending_area
 
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 
@@ -37,40 +40,37 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.localdata.get_old_city._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestLocaldata(TestCase):
-    def test_get_population(self, patch1, patch2, patch3, patch4):
+    def test_get_population(self, *args):
         df = get_population(update=True)
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_get_insee_one_area_1(self, patch1, patch2, patch3, patch4):
+    def test_get_insee_one_area_1(self, *args):
         def get_insee_one_area_test(area_type="derf", codearea="c"):
             _get_insee_one_area(area_type=area_type, codearea=codearea)
 
         self.assertRaises(ValueError, get_insee_one_area_test)
 
-    def test_get_insee_one_area_2(self, patch1, patch2, patch3, patch4):
+    def test_get_insee_one_area_2(self, *args):
         def get_insee_one_area_test(area_type="ZoneDEmploi2020", codearea="c"):
             _get_insee_one_area(area_type=area_type, codearea=codearea)
 
         self.assertRaises(ValueError, get_insee_one_area_test)
 
-    def test_get_new_city(self, patch1, patch2, patch3, patch4):
+    def test_get_new_city(self, *args):
         test = True
         df = get_new_city(code="24431", date="2018-01-01")
         test = test & isinstance(df, pd.DataFrame)
@@ -78,13 +78,13 @@ class TestLocaldata(TestCase):
         test = test & isinstance(df, pd.DataFrame)
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_get_old_city(self, patch1, patch2, patch3, patch4):
+    def test_get_old_city(self, *args):
         test = True
         df = get_old_city(code="24259")
         test = test & isinstance(df, pd.DataFrame)
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_get_geo_list_1(self, patch1, patch2, patch3, patch4):
+    def test_get_geo_list_1(self, *args):
         list_available_geo = [
             "communes",
             "regions",
@@ -97,7 +97,7 @@ class TestLocaldata(TestCase):
 
         list_geo_data = []
         for geo in list_available_geo:
-            time.sleep(10)
+            time.sleep(1)
             list_geo_data.append(get_geo_list(geo))
 
         df = pd.concat(list_geo_data)
@@ -106,25 +106,25 @@ class TestLocaldata(TestCase):
         # repeat test to check locally saved data use
         self.assertTrue(isinstance(get_geo_list("regions"), pd.DataFrame))
 
-    def test_get_geo_list_2(self, patch1, patch2, patch3, patch4):
+    def test_get_geo_list_2(self, *args):
         self.assertRaises(ValueError, get_geo_list, "a")
 
-    def test_get_geo_relation_1(self, patch1, patch2, patch3, patch4):
+    def test_get_geo_relation_1(self, *args):
         df1 = _get_geo_relation("region", "11", "descendants")
-        time.sleep(10)
+        time.sleep(1)
         df2 = _get_geo_relation("departement", "91", "ascendants")
         test = isinstance(df1, pd.DataFrame) & isinstance(df2, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_get_nivgeo_list(self, patch1, patch2, patch3, patch4):
+    def test_get_nivgeo_list(self, *args):
         data = get_nivgeo_list()
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_local_metadata(self, patch1, patch2, patch3, patch4):
+    def test_get_local_metadata(self, *args):
         data = get_local_metadata()
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_local_data_1(self, patch1, patch2, patch3, patch4):
+    def test_get_local_data_1(self, *args):
         dep = get_geo_list("departements")
 
         variables = "AGESCOL-SEXE-ETUD"
@@ -142,7 +142,7 @@ class TestLocaldata(TestCase):
 
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    def test_get_local_data_all(self, patch1, patch2, patch3, patch4):
+    def test_get_local_data_all(self, *args):
         test = True
 
         data = get_local_data(
@@ -313,7 +313,7 @@ class TestLocaldata(TestCase):
 
         self.assertTrue(test)
 
-    def test_get_local_data_latest_error(self, patch1, patch2, patch3, patch4):
+    def test_get_local_data_latest_error(self, *args):
         def getlocaldataTestError():
             data = get_local_data(
                 dataset_version="GEOlatestTESTlatest", variables="CS1_6"
@@ -322,7 +322,7 @@ class TestLocaldata(TestCase):
 
         self.assertRaises(ValueError, getlocaldataTestError)
 
-    def test_get_area_list_1(self, patch1, patch2, patch3, patch4):
+    def test_get_area_list_1(self, *args):
         test = True
 
         df = get_area_list(update=True)
@@ -345,19 +345,19 @@ class TestLocaldata(TestCase):
 
         self.assertTrue(test)
 
-    def test_get_area_list_2(self, patch1, patch2, patch3, patch4):
+    def test_get_area_list_2(self, *args):
         def get_area_list_test():
             get_area_list("a")
 
         self.assertRaises(ValueError, get_area_list_test)
 
-    def test_get_area_list_3(self, patch1, patch2, patch3, patch4):
+    def test_get_area_list_3(self, *args):
         def get_area_list_test():
             get_area_list(area="regions", date="1900-01-01", update=True)
 
         self.assertRaises(RequestException, get_area_list_test)
 
-    def test_get_included_area(self, patch1, patch2, patch3, patch4):
+    def test_get_included_area(self, *args):
         list_available_area = [
             "zonesDEmploi2020",
             "airesDAttractionDesVilles2020",
@@ -366,7 +366,7 @@ class TestLocaldata(TestCase):
         list_data = []
 
         for a in list_available_area:
-            time.sleep(10)
+            time.sleep(1)
             df_list = get_area_list(a)
             code = df_list.CODE[:3].to_list()
             data = get_included_area(area_type=a, codeareas=code)

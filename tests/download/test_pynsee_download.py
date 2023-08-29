@@ -13,9 +13,12 @@ from pynsee.download import get_column_metadata
 from pynsee.utils.clear_all_cache import clear_all_cache
 
 from tests.mockups import (
+    module_patch,
     mock_requests_session,
     mock_pool,
-    # mock_wait_api_query_limit,
+    mock_request_insee,
+    mock_requests_get_from_session,
+    mock_requests_post_from_session,
 )
 
 mock_request_session_local = partial(
@@ -23,28 +26,25 @@ mock_request_session_local = partial(
 )
 
 SESSION = mock_request_session_local()
+mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
+mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
 
 
-def mock_requests_get(*args, **kwargs):
-    return SESSION.get(*args, **kwargs)
-
-
-def mock_requests_post(*args, **kwargs):
-    return SESSION.post(*args, **kwargs)
-
-
-# @mock.patch("pynsee.utils._wait_api_query_limit", side_effect=mock_wait_api_query_limit)
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
 @mock.patch("requests.Session", side_effect=mock_request_session_local)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
+@module_patch(
+    "pynsee.utils._request_insee._request_insee",
+    side_effect=mock_request_insee,
+)
 class TestsDownload(TestCase):
-    def test_check_url(self, patch1, patch2, patch3, patch4):
+    def test_check_url(self, *args):
         url = "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2020_csv.zip"
         url2 = _check_url(url)
         self.assertTrue(isinstance(url2, str))
 
-    def test_get_file_list_error(self, patch1, patch2, patch3, patch4):
+    def test_get_file_list_error(self, *args):
         os.environ["pynsee_file_list"] = (
             "https://raw.githubusercontent.com/"
             + "InseeFrLab/DoReMIFaSol/master/data-raw/test.json"
@@ -56,14 +56,14 @@ class TestsDownload(TestCase):
 
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_download_big_file(self, patch1, patch2, patch3, patch4):
+    def test_download_big_file(self, *args):
         df = download_file(
             "RP_LOGEMENT_2017",
             variables=["COMMUNE", "IRIS", "ACHL", "IPONDL"],
         )
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    def test_download_file_all(self, patch1, patch2, patch3, patch4):
+    def test_download_file_all(self, *args):
         meta = get_file_list()
         self.assertTrue(isinstance(meta, pd.DataFrame))
 
@@ -115,7 +115,7 @@ class KnownGood(unittest.TestCase):
     def __init__(self, input):
         super(KnownGood, self).__init__()
         self.input = input
-    def runTest(self, patch1, patch2, patch3, patch4):
+    def runTest(self, *args):
         self.assertEqual(type(download_file(self.input)), pd.DataFrame)
 
 def suite():
