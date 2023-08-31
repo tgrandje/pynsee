@@ -61,9 +61,7 @@ def get_definition(ids):
         return val
 
     for elt in tqdm(
-        len(ids),
-        desc="Getting data",
-        disable=pynsee._config["hide_progress"]
+        ids, desc="Getting data", disable=pynsee._config["hide_progress"]
     ):
         query = link + "/" + elt
 
@@ -76,15 +74,23 @@ def get_definition(ids):
             title_en = None
 
             if data["intitule"][0]["langue"] == "fr":
-                title_fr = extract_data(data, item1="intitule", i=0, item2="contenu")
-                title_en = extract_data(data, item1="intitule", i=1, item2="contenu")
+                title_fr = extract_data(
+                    data, item1="intitule", i=0, item2="contenu"
+                )
+                title_en = extract_data(
+                    data, item1="intitule", i=1, item2="contenu"
+                )
 
             def_fr = None
             def_en = None
 
             if data["definition"][0]["langue"] == "fr":
-                def_fr = extract_data(data, item1="definition", i=0, item2="contenu")
-                def_en = extract_data(data, item1="definition", i=1, item2="contenu")
+                def_fr = extract_data(
+                    data, item1="definition", i=0, item2="contenu"
+                )
+                def_en = extract_data(
+                    data, item1="definition", i=1, item2="contenu"
+                )
                 def_fr = clean_definition(def_fr)
                 def_en = clean_definition(def_en)
 
