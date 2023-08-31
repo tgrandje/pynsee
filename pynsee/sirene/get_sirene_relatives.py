@@ -5,6 +5,7 @@ import re
 
 from pynsee.utils._request_insee import _request_insee
 from pynsee.utils._make_dataframe_from_dict import _make_dataframe_from_dict
+from pynsee.sirene.SireneDataFrame import SireneDataFrame
 
 
 def get_sirene_relatives(*siret):
@@ -17,7 +18,7 @@ def get_sirene_relatives(*siret):
         ValueError: siret should be str or list
 
     Returns:
-        pandas.DataFrame: dataframe containing the query content
+        SireneDataFrame: dataframe containing the query content
 
     Examples:
         >>> # find parent or child entities for one siret entity (etablissement)
@@ -42,7 +43,6 @@ def get_sirene_relatives(*siret):
 
     for s in range(len(list_siret)):
         for i in range(len(types)):
-
             criteria = types[i] + ":" + re.sub(r"\s+", "", list_siret[s])
             query = f"https://api.insee.fr/entreprises/sirene/V3/siret/liensSuccession?q={criteria}"
             try:
@@ -59,6 +59,7 @@ def get_sirene_relatives(*siret):
 
     if len(list_df) > 0:
         df = pd.concat(list_df).reset_index(drop=True)
+        df = SireneDataFrame(df)
 
         for c in ["statut", "message", "nombre", "total", "debut"]:
             if c in df.columns:
@@ -66,4 +67,6 @@ def get_sirene_relatives(*siret):
 
         return df
     else:
-        raise ValueError("Neither parent nor child entities were found for any entity")
+        raise ValueError(
+            "Neither parent nor child entities were found for any entity"
+        )
