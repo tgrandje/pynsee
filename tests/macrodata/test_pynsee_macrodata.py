@@ -247,9 +247,7 @@ class TestMacrodata(TestCase):
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
 
-    def test_get_idbank_internal_data_harmonized(
-        self, patch1, patch2, patch3, patch4
-    ):
+    def test_get_idbank_internal_data_harmonized(self, *args):
         df = _get_idbank_internal_data_harmonized()
         test = isinstance(df, pd.DataFrame)
         self.assertTrue(test)
