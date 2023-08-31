@@ -57,7 +57,7 @@ class MockedSession(CachedSession):
             expire_after=3600 * 24 * 15,
             ignored_parameters=("Authorization", "access_token"),
             filter_fn=lambda session: "api.insee.fr/token" not in session.url,
-            allowable_codes=(200, 403, 404),
+            allowable_codes=(200, 401, 403, 404),
             *args,
             **kwargs,
         )
