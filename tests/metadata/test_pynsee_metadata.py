@@ -46,10 +46,10 @@ mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
     "pynsee.metadata.get_legal_entity._request_insee",
     side_effect=mock_request_insee,
 )
-@module_patch(
-    "pynsee.metadata.get_operation._request_insee",
-    side_effect=mock_request_insee,
-)
+# @module_patch(
+#     "pynsee.metadata.get_operation._request_insee",
+#     side_effect=mock_request_insee,
+# )
 class TestMetadata(TestCase):
     def test_get_legal_entity(self, *args):
         data = get_legal_entity(codes=["5599", "83"])
