@@ -35,50 +35,20 @@ from tests.mockups import (
     mock_requests_session,
     mock_pool,
     # mock_request_insee,
-    mock_requests_get_from_session,
-    mock_requests_post_from_session,
+    mock_requests_get,
+    mock_requests_post,
 )
 
 
-# Split on multiple cach to avoid reaching artifacts storage's ceiling
-mock_request_session_local_1 = partial(
-    mock_requests_session, cache_name=f"{__name__}_1"
-)
-mock_request_session_local_2 = partial(
-    mock_requests_session, cache_name=f"{__name__}_2"
-)
-
-SESSION_1 = mock_request_session_local_1()
-SESSION_2 = mock_request_session_local_2()
-
-mock_requests_get_1 = partial(
-    mock_requests_get_from_session, session=SESSION_1
-)
-mock_requests_post_1 = partial(
-    mock_requests_post_from_session, session=SESSION_1
-)
-
-mock_requests_get_2 = partial(
-    mock_requests_get_from_session, session=SESSION_2
-)
-mock_requests_post_2 = partial(
-    mock_requests_post_from_session, session=SESSION_2
-)
-
-
+@mock.patch("multiprocessing.Pool", side_effect=mock_pool)
+@mock.patch("requests.Session", side_effect=mock_requests_session)
+@mock.patch("requests.get", side_effect=mock_requests_get)
+@mock.patch("requests.post", side_effect=mock_requests_post)
 class TestGeodata(TestCase):
-    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-    @mock.patch("requests.Session", side_effect=mock_request_session_local_1)
-    @mock.patch("requests.get", side_effect=mock_requests_get_1)
-    @mock.patch("requests.post", side_effect=mock_requests_post_1)
     def test_get_geodata_with_backup(self, *args):
         df = _get_geodata_with_backup("ADMINEXPRESS-COG.LATEST:departement")
         self.assertTrue(isinstance(df, pd.DataFrame))
 
-    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-    @mock.patch("requests.Session", side_effect=mock_request_session_local_1)
-    @mock.patch("requests.get", side_effect=mock_requests_get_1)
-    @mock.patch("requests.post", side_effect=mock_requests_post_1)
     def test_get_geodata_short_1(self, *args):
         global session
         session = requests.Session()
@@ -209,10 +179,6 @@ class TestGeodata(TestCase):
         data = get_geodata(id="test", update=True)
         self.assertTrue(isinstance(data, pd.DataFrame))
 
-    @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-    @mock.patch("requests.Session", side_effect=mock_request_session_local_2)
-    @mock.patch("requests.get", side_effect=mock_requests_get_2)
-    @mock.patch("requests.post", side_effect=mock_requests_post_2)
     def test_get_geodata_short_2(self, *args):
         # Split on 2 tests to split the cache database and reduce size
         com = get_geodata(

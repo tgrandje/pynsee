@@ -51,9 +51,9 @@ def mock_pool(*args, **kwargs):
 
 
 class MockedSession(CachedSession):
-    def __init__(self, cache_name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(
-            cache_name=f"pynsee.{cache_name}.sqlite",
+            cache_name="pynsee-tests.sqlite",
             expire_after=3600 * 24 * 15,
             ignored_parameters=("Authorization", "access_token"),
             filter_fn=lambda session: "api.insee.fr/token" not in session.url,
@@ -83,14 +83,15 @@ def mock_requests_session(*args, **kwargs):
     return MockedSession(*args, **kwargs)
 
 
-def mock_requests_get_from_session(*args, **kwargs):
-    session = kwargs.pop("session")
-    return session.get(*args, **kwargs)
+SESSION = MockedSession()
 
 
-def mock_requests_post_from_session(*args, **kwargs):
-    session = kwargs.pop("session")
-    return session.post(*args, **kwargs)
+def mock_requests_get(*args, **kwargs):
+    return SESSION.get(*args, **kwargs)
+
+
+def mock_requests_post(*args, **kwargs):
+    return SESSION.post(*args, **kwargs)
 
 
 _get_credentials()

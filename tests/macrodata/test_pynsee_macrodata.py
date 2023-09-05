@@ -44,25 +44,16 @@ from tests.mockups import (
     mock_requests_session,
     mock_pool,
     mock_request_insee,
-    mock_requests_get_from_session,
-    mock_requests_post_from_session,
+    mock_requests_get,
+    mock_requests_post,
 )
 
 
 test_SDMX = True
 
 
-mock_request_session_local = partial(
-    mock_requests_session, cache_name=__name__
-)
-
-SESSION = mock_request_session_local()
-mock_requests_get = partial(mock_requests_get_from_session, session=SESSION)
-mock_requests_post = partial(mock_requests_post_from_session, session=SESSION)
-
-
 @mock.patch("multiprocessing.Pool", side_effect=mock_pool)
-@mock.patch("requests.Session", side_effect=mock_request_session_local)
+@mock.patch("requests.Session", side_effect=mock_requests_session)
 @mock.patch("requests.get", side_effect=mock_requests_get)
 @mock.patch("requests.post", side_effect=mock_requests_post)
 @module_patch(
